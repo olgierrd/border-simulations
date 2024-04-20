@@ -72,4 +72,3 @@ class PoliceAgent(mesa.Agent):
                 self.chase_smuggler(other)
                 other.drugs -= 1
                 self.drugs += 1
-
