@@ -17,8 +17,8 @@ class DrugsModel(mesa.Model):
 
             # Keep trying until the agent is added to an empty grid cell in the lower quarter
             while True:
-                x = self.random.randrange(self.grid.width)
-                y = self.random.randrange(self.grid.height // 2 + 2, self.grid.height)
+                x = self.random.randrange(self.grid.height)
+                y = self.random.randrange(self.grid.width // 2 + 6, self.grid.width)
                 if self.grid.is_cell_empty((x, y)):
                     self.grid.place_agent(smuggler, (x, y))
                     break
@@ -29,8 +29,8 @@ class DrugsModel(mesa.Model):
 
             # Keep trying until the agent is added to an empty grid cell in the upper quarter
             while True:
-                x = self.random.randrange(0, self.grid.width)
-                y = self.random.randrange(0, self.grid.height // 2 - 2)
+                x = self.random.randrange(self.grid.height)
+                y = self.random.randrange(self.grid.width // 2 - 6)
                 if self.grid.is_cell_empty((x, y)):
                     self.grid.place_agent(policeman, (x, y))
                     break
