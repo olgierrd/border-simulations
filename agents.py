@@ -10,12 +10,13 @@ class SmugglerAgent(mesa.Agent):
         self.speed = 1  # Initial walking speed
 
     def move(self) -> None:
-        possible_steps = self.model.grid.get_neighborhood(
-            self.pos,
-            moore=True,
-            include_center=False)
-        new_position = self.random.choice(possible_steps)
-        self.model.grid.move_agent(self, new_position)
+        for _ in range(self.speed):
+            possible_steps = self.model.grid.get_neighborhood(
+                self.pos,
+                moore=True,
+                include_center=False)
+            new_position = self.random.choice(possible_steps)
+            self.model.grid.move_agent(self, new_position)
 
     def flee_from_police(self, target) -> None:
         dx, dy = target.pos[0] - self.pos[0], target.pos[1] - self.pos[1]
@@ -45,24 +46,25 @@ class PoliceAgent(mesa.Agent):
         self.speed = 1
 
     def move(self) -> None:
-        possible_steps = self.model.grid.get_neighborhood(
-            self.pos,
-            moore=True,
-            include_center=False)
-        new_position = self.random.choice(possible_steps)
-        self.model.grid.move_agent(self, new_position)
+        for _ in range(self.speed):
+            possible_steps = self.model.grid.get_neighborhood(
+                self.pos,
+                moore=True,
+                include_center=False)
+            new_position = self.random.choice(possible_steps)
+            self.model.grid.move_agent(self, new_position)
 
     def chase_smuggler(self, target) -> None:
         dx, dy = target.pos[0] - self.pos[0], target.pos[1] - self.pos[1]
         distance = np.sqrt(dx ** 2 + dy ** 2)
-        if distance <= 1:
-            # Within 1 square, start running
-            self.speed *= 2
-        else:
-            # Continue walking
-            self.speed = 1
+        if distance <= 4:
+            # Within 4 squares, start running
+            self.speed = 2
+        elif distance <= 1:
+            self.drugs += target.drugs
+            target.drugs = 0
 
-    def step(self):
+    def step(self) -> None:
         self.move()
         cellmates = self.model.grid.get_cell_list_contents([self.pos])
         for other in cellmates:
