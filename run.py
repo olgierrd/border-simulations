@@ -12,13 +12,8 @@ while any(isinstance(agent, agents.SmugglerAgent) for agent in model.schedule.ag
     steps += 1
 
 
-
 # Get the number of drugs police agents have
 drugs_captured_indiv = {f"{agent.__class__} with ID{agent.unique_id}": agent.drugs for agent in model.schedule.agents}
 drugs_captured = sum(drugs_captured_indiv.values())
 
 print(f"Steps: {steps}", f"Initial: {drugs_initial}", f"Captured: {drugs_captured}")
-
-
-
-
