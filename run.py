@@ -1,11 +1,8 @@
-import numpy as np
-
 import agents
 from model import DrugsModel
-import matplotlib.pyplot as plt
 
 # Create a model with 10 agents
-model = DrugsModel(8, 5, 30, 30)
+model = DrugsModel(8, 15, 30, 30)
 steps = 0
 
 # Run the model while there are still smugglers

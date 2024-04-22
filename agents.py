@@ -29,7 +29,7 @@ class SmugglerAgent(mesa.Agent):
             # Move the police agent with its speed
             dx, dy = int(dx * self.speed), int(dy * self.speed)
 
-            new_position = (self.pos[0] + dx, self.pos[1] + dy)
+            new_position = (self.pos[0] - dx, self.pos[1] - dy)
         else:
             possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
             new_position = self.random.choice(possible_steps)
