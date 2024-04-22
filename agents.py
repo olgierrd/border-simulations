@@ -1,6 +1,11 @@
 import mesa
 import numpy as np
 
+# TODO:
+#  1) define border area -- done
+#  2) count agents that crossed the border
+#  3) remove agents that crossed the border -- done
+
 
 class SmugglerAgent(mesa.Agent):
     def __init__(self, unique_id, model) -> None:
@@ -46,16 +51,22 @@ class SmugglerAgent(mesa.Agent):
             target.drugs += self.drugs
             self.drugs = 0
 
+    def border_crossed(self) -> bool:
+        return self.pos[1] in range(self.model.grid.width - 4 , self.model.grid.width)
+
     def step(self) -> None:
         neighbors = self.move()
-        if self.drugs > 0:
+        if self.border_crossed():
+            # If smuggler crossed the border, it is removed
+            self.model.schedule.remove(self)
+        elif self.drugs > 0:
             for other in neighbors:
                 if isinstance(other, PoliceAgent):
                     self.flee_from_police(other)
                     other.drugs += 1
                     self.drugs -= 1
         else:
-            # If smuggler has no drugs, it dies
+            # If smuggler has no drugs, it is removed
             self.model.schedule.remove(self)
 
 
