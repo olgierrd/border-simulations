@@ -1,10 +1,11 @@
 import mesa
-import numpy as np
+from nonagent_functions import distance_find, neighbor_find
 
 # TODO:
 #  1) define border area -- done
 #  2) count agents that crossed the border
 #  3) remove agents that crossed the border -- done
+#  4) optimize the code (distance calculation) -- done
 
 
 class SmugglerAgent(mesa.Agent):
@@ -14,28 +15,19 @@ class SmugglerAgent(mesa.Agent):
         self.speed = 1
 
     def move(self) -> list:
-        neighbors = self.model.grid.get_neighbors(
-            self.pos, moore=True, include_center=False, radius=5
-        )
+        neighbors = neighbor_find(self, 4)
         police = [agent for agent in neighbors if isinstance(agent, PoliceAgent)]
 
         if police:
-            # Calculate the distance to each smuggler
+            # Calculate the distance to each officer
             distances = [
-                np.sqrt(
-                    (self.pos[0] - officer.pos[0]) ** 2
-                    + (self.pos[1] - officer.pos[1]) ** 2
-                )
+                distance_find(self, officer)[0]  # Calculate distance
                 for officer in police
             ]
             target = police[distances.index(min(distances))]
 
             # Calculate the direction vector to the target
-            dx = target.pos[0] - self.pos[0]
-            dy = target.pos[1] - self.pos[1]
-
-            # Normalize the direction vector
-            distance = np.sqrt(dx**2 + dy**2)
+            distance, dx, dy = distance_find(self, target)
             dx /= distance
             dy /= distance
             # Move the police agent with its speed
@@ -52,8 +44,7 @@ class SmugglerAgent(mesa.Agent):
         return neighbors
 
     def flee_from_police(self, target) -> None:
-        dx, dy = target.pos[0] - self.pos[0], target.pos[1] - self.pos[1]
-        distance = np.sqrt(dx**2 + dy**2)
+        distance = distance_find(self, target)[0]
         if distance <= 3:
             self.speed = 2
         elif distance <= 1:
@@ -86,28 +77,16 @@ class PoliceAgent(mesa.Agent):
         self.speed = 1
 
     def move(self) -> list:
-        neighbors = self.model.grid.get_neighbors(
-            self.pos, moore=True, include_center=False, radius=5
-        )
+        neighbors = neighbor_find(self, 5)
         smugglers = [agent for agent in neighbors if isinstance(agent, SmugglerAgent)]
 
         if smugglers:
             # Calculate the distance to each smuggler
-            distances = [
-                np.sqrt(
-                    (self.pos[0] - smuggler.pos[0]) ** 2
-                    + (self.pos[1] - smuggler.pos[1]) ** 2
-                )
-                for smuggler in smugglers
-            ]
+            distances = [distance_find(self, smuggler)[0] for smuggler in smugglers]
             target = smugglers[distances.index(min(distances))]
 
             # Calculate the direction vector to the target
-            dx = target.pos[0] - self.pos[0]
-            dy = target.pos[1] - self.pos[1]
-
-            # Normalize the direction vector
-            distance = np.sqrt(dx**2 + dy**2)
+            distance, dx, dy = distance_find(self, target)
             dx /= distance
             dy /= distance
             # Move the police agent with its speed
@@ -124,8 +103,7 @@ class PoliceAgent(mesa.Agent):
         return neighbors
 
     def chase_smuggler(self, target) -> None:
-        dx, dy = target.pos[0] - self.pos[0], target.pos[1] - self.pos[1]
-        distance = np.sqrt(dx**2 + dy**2)
+        distance = distance_find(self, target)[0]
         if distance <= 4:
             # Within 4 squares, start running
             self.speed = 2
