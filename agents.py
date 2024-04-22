@@ -3,7 +3,7 @@ from nonagent_functions import distance_find, neighbor_find
 
 # TODO:
 #  1) define border area -- done
-#  2) count agents that crossed the border
+#  2) count agents that crossed the border -- done
 #  3) remove agents that crossed the border -- done
 #  4) optimize the code (distance calculation) -- done
 

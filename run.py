@@ -19,4 +19,8 @@ drugs_captured_indiv = {
 }
 drugs_captured = sum(drugs_captured_indiv.values())
 
-print(f"Steps: {steps}", f"Initial: {drugs_initial}", f"Captured: {drugs_captured}")
+print(
+    f"Steps: {steps}",
+    f"Initial: {drugs_initial}",
+    f"Captured: {drugs_captured}",
+    f"Crossed the border: {drugs_initial - drugs_captured}",)
