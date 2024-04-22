@@ -8,14 +8,34 @@ class SmugglerAgent(mesa.Agent):
         self.drugs = 1
         self.speed = 1
 
-    def move(self) -> None:
-        for _ in range(self.speed):
-            possible_steps = self.model.grid.get_neighborhood(
-                self.pos,
-                moore=True,
-                include_center=False)
+    def move(self) -> list:
+        neighbors = self.model.grid.get_neighbors(self.pos, moore=True, include_center=False, radius=5)
+        police = [agent for agent in neighbors if isinstance(agent, PoliceAgent)]
+
+        if police:
+            # Calculate the distance to each smuggler
+            distances = [np.sqrt((self.pos[0] - officer.pos[0]) ** 2 + (self.pos[1] - officer.pos[1]) ** 2) for
+                         officer in police]
+            target = police[distances.index(min(distances))]
+
+            # Calculate the direction vector to the target
+            dx = target.pos[0] - self.pos[0]
+            dy = target.pos[1] - self.pos[1]
+
+            # Normalize the direction vector
+            distance = np.sqrt(dx ** 2 + dy ** 2)
+            dx /= distance
+            dy /= distance
+            # Move the police agent with its speed
+            dx, dy = int(dx * self.speed), int(dy * self.speed)
+
+            new_position = (self.pos[0] + dx, self.pos[1] + dy)
+        else:
+            possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
             new_position = self.random.choice(possible_steps)
-            self.model.grid.move_agent(self, new_position)
+
+        self.model.grid.move_agent(self, new_position)
+        return neighbors
 
     def flee_from_police(self, target) -> None:
         dx, dy = target.pos[0] - self.pos[0], target.pos[1] - self.pos[1]
@@ -27,9 +47,8 @@ class SmugglerAgent(mesa.Agent):
             self.drugs = 0
 
     def step(self) -> None:
-        self.move()
+        neighbors = self.move()
         if self.drugs > 0:
-            neighbors = self.model.grid.get_neighbors(self.pos, moore=True, include_center=True, radius=4)
             for other in neighbors:
                 if isinstance(other, PoliceAgent):
                     self.flee_from_police(other)
@@ -46,14 +65,34 @@ class PoliceAgent(mesa.Agent):
         self.drugs = 0
         self.speed = 1
 
-    def move(self) -> None:
-        for _ in range(self.speed):
-            possible_steps = self.model.grid.get_neighborhood(
-                self.pos,
-                moore=True,
-                include_center=False)
+    def move(self) -> list:
+        neighbors = self.model.grid.get_neighbors(self.pos, moore=True, include_center=False, radius=5)
+        smugglers = [agent for agent in neighbors if isinstance(agent, SmugglerAgent)]
+
+        if smugglers:
+            # Calculate the distance to each smuggler
+            distances = [np.sqrt((self.pos[0] - smuggler.pos[0]) ** 2 + (self.pos[1] - smuggler.pos[1]) ** 2) for
+                         smuggler in smugglers]
+            target = smugglers[distances.index(min(distances))]
+
+            # Calculate the direction vector to the target
+            dx = target.pos[0] - self.pos[0]
+            dy = target.pos[1] - self.pos[1]
+
+            # Normalize the direction vector
+            distance = np.sqrt(dx ** 2 + dy ** 2)
+            dx /= distance
+            dy /= distance
+            # Move the police agent with its speed
+            dx, dy = int(dx * self.speed), int(dy * self.speed)
+
+            new_position = (self.pos[0] + dx, self.pos[1] + dy)
+        else:
+            possible_steps = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
             new_position = self.random.choice(possible_steps)
-            self.model.grid.move_agent(self, new_position)
+
+        self.model.grid.move_agent(self, new_position)
+        return neighbors
 
     def chase_smuggler(self, target) -> None:
         dx, dy = target.pos[0] - self.pos[0], target.pos[1] - self.pos[1]
@@ -66,8 +105,7 @@ class PoliceAgent(mesa.Agent):
             target.drugs = 0
 
     def step(self) -> None:
-        self.move()
-        neighbors = self.model.grid.get_neighbors(self.pos, moore=True, include_center=True, radius=5)
+        neighbors = self.move()
         for other in neighbors:
             if isinstance(other, SmugglerAgent):
                 self.chase_smuggler(other)
