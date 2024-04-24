@@ -13,9 +13,29 @@ class SmugglerAgent(mesa.Agent):
         super().__init__(unique_id, model)
         self.drugs = 1
         self.speed = 1
+        self.radius = max((self.model.grid.width + self.model.grid.height) // 10, 3)
+
+    def flee_from_police(self, target) -> None | tuple:
+        # Calculate the direction vector to the target
+        distance, dx, dy = distance_find(self, target)
+        if distance in range(1, self.radius + 1):
+            self.speed = 2
+            # Normalize the direction vector
+            dx /= distance
+            dy /= distance
+            # Move the smuggler agent with its speed
+            dx, dy = int(dx * self.speed), int(dy * self.speed)
+
+            self.pos = (self.pos[0] - dx, self.pos[1] - dy)
+        if distance <= 1:
+            target.drugs += self.drugs
+            self.drugs = 0
+
+    def border_crossed(self) -> bool:
+        return self.pos[1] in range(self.model.grid.height - 4, self.model.grid.height)
 
     def move(self) -> list:
-        neighbors = neighbor_find(self, 4)
+        neighbors = neighbor_find(self, self.radius)
         police = [agent for agent in neighbors if isinstance(agent, PoliceAgent)]
 
         if police:
@@ -25,46 +45,17 @@ class SmugglerAgent(mesa.Agent):
                 for officer in police
             ]
             target = police[distances.index(min(distances))]
+            self.flee_from_police(target)
+        elif self.pos[1] not in range(self.model.grid.height - self.radius, self.model.grid.height + 1):
+            self.pos = (self.pos[0], self.pos[1] + 1)
 
-            # Calculate the direction vector to the target
-            distance, dx, dy = distance_find(self, target)
-            dx /= distance
-            dy /= distance
-            # Move the police agent with its speed
-            dx, dy = int(dx * self.speed), int(dy * self.speed)
-
-            new_position = (self.pos[0] - dx, self.pos[1] - dy)
-        else:
-            possible_steps = self.model.grid.get_neighborhood(
-                self.pos, moore=True, include_center=False
-            )
-            new_position = self.random.choice(possible_steps)
-
-        self.model.grid.move_agent(self, new_position)
-        return neighbors
-
-    def flee_from_police(self, target) -> None:
-        distance = distance_find(self, target)[0]
-        if distance <= 3:
-            self.speed = 2
-        elif distance <= 1:
-            target.drugs += self.drugs
-            self.drugs = 0
-
-    def border_crossed(self) -> bool:
-        return self.pos[1] in range(self.model.grid.width - 4, self.model.grid.width)
-
-    def step(self) -> None:
-        neighbors = self.move()
         if self.border_crossed():
             # If smuggler crossed the border, it is removed
             self.model.schedule.remove(self)
-        elif self.drugs > 0:
-            for other in neighbors:
-                if isinstance(other, PoliceAgent):
-                    self.flee_from_police(other)
-                    other.drugs += 1
-                    self.drugs -= 1
+
+    def step(self) -> None:
+        if self.drugs > 0:
+            self.move()
         else:
             # If smuggler has no drugs, it is removed
             self.model.schedule.remove(self)
@@ -75,44 +66,38 @@ class PoliceAgent(mesa.Agent):
         super().__init__(unique_id, model)
         self.drugs = 0
         self.speed = 1
+        self.radius = max((self.model.grid.width + self.model.grid.height) // 8, 5)
+
+    def chase_smuggler(self, target) -> None:
+        distance, dx, dy = distance_find(self, target)
+        if distance in range(1, self.radius + 1):
+            self.speed = 3
+            # Normalize the direction vector
+            dx /= distance
+            dy /= distance
+            # Move the police agent with its speed
+            dx, dy = int(dx * self.speed), int(dy * self.speed)
+
+            self.pos = (self.pos[0] + dx, self.pos[1] + dy)
+        if distance <= 1:
+            self.drugs += target.drugs
+            target.drugs = 0
 
     def move(self) -> list:
-        neighbors = neighbor_find(self, 5)
+        neighbors = neighbor_find(self, self.radius)
         smugglers = [agent for agent in neighbors if isinstance(agent, SmugglerAgent)]
 
         if smugglers:
             # Calculate the distance to each smuggler
             distances = [distance_find(self, smuggler)[0] for smuggler in smugglers]
             target = smugglers[distances.index(min(distances))]
-
-            # Calculate the direction vector to the target
-            distance, dx, dy = distance_find(self, target)
-            dx /= distance
-            dy /= distance
-            # Move the police agent with its speed
-            dx, dy = int(dx * self.speed), int(dy * self.speed)
-
-            new_position = (self.pos[0] + dx, self.pos[1] + dy)
+            self.chase_smuggler(target)
         else:
             possible_steps = self.model.grid.get_neighborhood(
                 self.pos, moore=True, include_center=False
             )
-            new_position = self.random.choice(possible_steps)
-
-        self.model.grid.move_agent(self, new_position)
+            self.pos = self.random.choice(possible_steps)
         return neighbors
 
-    def chase_smuggler(self, target) -> None:
-        distance = distance_find(self, target)[0]
-        if distance <= 4:
-            # Within 4 squares, start running
-            self.speed = 2
-        if distance <= 1:
-            self.drugs += target.drugs
-            target.drugs = 0
-
     def step(self) -> None:
-        neighbors = self.move()
-        for other in neighbors:
-            if isinstance(other, SmugglerAgent):
-                self.chase_smuggler(other)
+        self.move()
