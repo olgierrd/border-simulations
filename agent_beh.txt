@@ -1,0 +1,22 @@
+smuggler = {
+    "spawn": range(3 * grid.height / 4, grid.height),  // since the start of the grid is in the top left corner,
+                                                          we can use the height of the grid to determine the spawn
+                                                          range
+    "speed": 1,
+    "drugs": 1,
+    "direction": "up",
+    "speed increased": 2,
+    "range of vision": max(grid.(height+width) // 10, 3)
+    "when caught": speed = 0
+    "when no drugs": dies
+}
+
+police = {
+    "spawn": range(0, grid.height / 4),
+    "speed": 1,
+    "drugs": 0,
+    "direction": "random",
+    "speed_increased": 3,
+    "range of vision": max(grid.(height+width) // 8, 5)
+    "when captured smuggler": drugs += 1
+}
