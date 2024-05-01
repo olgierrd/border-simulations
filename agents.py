@@ -14,6 +14,12 @@ class SmugglerAgent(mesa.Agent):
         self.drugs = 1
         self.speed = 1
         self.radius = max((self.model.grid.width + self.model.grid.height) // 10, 3)
+        self.state = "active"  # Initial state
+        self.states = {  # State machine
+            "active": self.active_state,
+            "caught": self.caught_state,
+            "crossed_border": self.crossed_border_state,
+        }
 
     def flee_from_police(self, target) -> None | tuple:
         # Calculate the direction vector to the target
@@ -49,16 +55,23 @@ class SmugglerAgent(mesa.Agent):
         elif self.pos[1] not in range(self.model.grid.height - self.radius, self.model.grid.height + 1):
             self.pos = (self.pos[0], self.pos[1] + 1)
 
-        if self.border_crossed():
-            # If smuggler crossed the border, it is removed
-            self.model.schedule.remove(self)
+    def active_state(self) -> None:
+        self.move()
+        if self.drugs == 0:
+            self.state = "caught"
+        elif self.border_crossed():
+            self.state = "crossed_border"
+
+    def caught_state(self) -> None:
+        # If smuggler has no drugs, it is removed
+        self.model.schedule.remove(self)
+
+    def crossed_border_state(self) -> None:
+        # If smuggler crossed the border, it is removed
+        self.model.schedule.remove(self)
 
     def step(self) -> None:
-        if self.drugs > 0:
-            self.move()
-        else:
-            # If smuggler has no drugs, it is removed
-            self.model.schedule.remove(self)
+        self.states[self.state]()
 
 
 class PoliceAgent(mesa.Agent):
