@@ -5,14 +5,15 @@ from agents import SmugglerAgent, PoliceAgent
 class DrugsModel(mesa.Model):
     def __init__(self, smugnum, polnum, width, height):
         super().__init__()
-        self.num_smugglers = smugnum
-        self.num_police = polnum
+        self.num_smugglers, self.num_police = smugnum, polnum
+        self.smugglers, self.police = set(), set()
         self.grid = mesa.space.MultiGrid(width, height, True)
         self.schedule = mesa.time.RandomActivation(self)
 
         # Agents creation
         for i in range(self.num_smugglers):
             smuggler = SmugglerAgent(i, self)
+            self.smugglers.add(smuggler)
             self.schedule.add(smuggler)
 
             # Keep trying until the agent is added to an empty grid cell in the lower quarter
@@ -25,6 +26,7 @@ class DrugsModel(mesa.Model):
 
         for i in range(self.num_police):
             policeman = PoliceAgent(i, self)
+            self.police.add(policeman)
             self.schedule.add(policeman)
 
             # Keep trying until the agent is added to an empty grid cell

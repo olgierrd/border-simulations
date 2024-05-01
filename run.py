@@ -1,12 +1,12 @@
 import agents
 from model import DrugsModel
 # Create a model with n agents
-model = DrugsModel(70, 100, 20, 20)
+model = DrugsModel(7, 10, 5, 5)
 drugs_initial = model.num_smugglers
 steps = 0
 
 # Run the model while there are still smugglers
-while any(isinstance(agent, agents.SmugglerAgent) for agent in model.schedule.agents):
+while model.smugglers:
     model.step()
     steps += 1
 

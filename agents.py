@@ -64,10 +64,12 @@ class SmugglerAgent(mesa.Agent):
 
     def caught_state(self) -> None:
         # If smuggler has no drugs, it is removed
+        self.model.smugglers.remove(self)
         self.model.schedule.remove(self)
 
     def crossed_border_state(self) -> None:
         # If smuggler crossed the border, it is removed
+        self.model.smugglers.remove(self)
         self.model.schedule.remove(self)
 
     def step(self) -> None:
